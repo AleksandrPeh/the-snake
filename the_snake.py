@@ -23,13 +23,16 @@ BOARD_BACKGROUND_COLOR = (0, 0, 0)
 BORDER_COLOR = (93, 216, 228)
 
 # Цвет яблока
-APPLE_COLOR = (255, 0, 0)
+APPLE_COLOR = (0, 255, 0)
 
 # Цвет змейки
-SNAKE_COLOR = (0, 255, 0)
+SNAKE_COLOR = (0, 0, 255)
+
+# Цвет несьедобного артефакта
+BAD_FRUIT_COLOR = (255, 0, 0)
 
 # Скорость движения змейки:
-SPEED = 20
+SPEED = 10
 
 # Настройка игрового окна:
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
@@ -75,6 +78,16 @@ class Apple(GameObject):
         rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
         pygame.draw.rect(screen, self.body_color, rect)
         pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+
+class Fruit(Apple):
+    """
+    Несъедобный артефакт: при столкновении змейка сбрасывается.
+
+    Отличается от Apple только цветом по умолчанию.
+    """
+
+    def __init__(self, position=(0, 0), body_color=BAD_FRUIT_COLOR):
+        super().__init__(position, body_color)
 
 
 class Snake(GameObject):
@@ -166,7 +179,7 @@ def main():
     """Запускает основной игровой цикл."""
     apple = Apple()
     snake = Snake()
-
+    fruit = Fruit()
     while True:
         clock.tick(SPEED)
         handle_keys(snake)
@@ -177,12 +190,18 @@ def main():
             snake.length += 1
             apple.randomize_position()
 
+        if snake.get_head_position() == fruit.position:
+            snake.reset()
+            screen.fill(BOARD_BACKGROUND_COLOR)
+            fruit.randomize_position()
+
         if snake.get_head_position() in snake.positions[1:]:
             snake.reset()
             screen.fill(BOARD_BACKGROUND_COLOR)
 
         snake.draw()
         apple.draw()
+        fruit.draw()
         pygame.display.update()
 
 
