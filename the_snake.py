@@ -1,3 +1,5 @@
+"""Игра «Змейка» на pygame."""
+
 from random import choice, randint
 
 import pygame as pg
@@ -33,6 +35,7 @@ class GameObject:
     """Базовый класс для игровых объектов."""
 
     def __init__(self, body_color=BOARD_BACKGROUND_COLOR):
+        """Инициализирует объект: позиция, цвет тела и цвет рамки."""
         self.position = CENTER_POSITION
         self.body_color = body_color
         self.border_color = BORDER_COLOR
@@ -41,24 +44,34 @@ class GameObject:
         """Отрисовывает одну клетку поля по заданной позиции."""
         rect = pg.Rect(position, (GRID_SIZE, GRID_SIZE))
         pg.draw.rect(
-            screen, color if color is not None else self.body_color, rect)
+            screen,
+            color if color is not None else self.body_color,
+            rect,
+        )
         if border:
             pg.draw.rect(screen, self.border_color, rect, 1)
 
     def draw(self):
+        """Отрисовывает объект. Реализуется в дочерних классах."""
         raise NotImplementedError(
-            'Метод draw должен быть реализован в дочернем классе')
+            'Метод draw должен быть реализован в дочернем классе',
+        )
 
 
 class Apple(GameObject):
     """Яблоко: появляется в случайной свободной клетке."""
 
-    def __init__(self, body_color=APPLE_COLOR, occupied_positions=(CENTER_POSITION,)):
+    def __init__(
+        self,
+        body_color=APPLE_COLOR,
+        occupied_positions=(CENTER_POSITION,),
+    ):
+        """Создаёт яблоко и ставит его в свободную клетку."""
         super().__init__(body_color)
         self.randomize_position(occupied_positions)
 
     def randomize_position(self, occupied_positions):
-        """Ставит яблоко в случайную клетку, не занятую переданными позициями."""
+        """Ставит яблоко в случайную клетку, не занятую другими объектами."""
         while True:
             self.position = (
                 randint(0, GRID_WIDTH - 1) * GRID_SIZE,
@@ -68,13 +81,15 @@ class Apple(GameObject):
                 break
 
     def draw(self):
+        """Отрисовывает яблоко на игровом поле."""
         self.draw_cell(self.position)
 
 
 class Snake(GameObject):
-    """Змейка."""
+    """Змейка: движется по полю, растёт от яблок, гибнет от препятствий."""
 
     def __init__(self, body_color=SNAKE_COLOR):
+        """Создаёт змейку длины 1 в центре поля."""
         super().__init__(body_color)
         self.length = 1
         self.positions = [self.position]
@@ -83,14 +98,17 @@ class Snake(GameObject):
         self.last = None
 
     def get_head_position(self):
+        """Возвращает координаты головы змейки."""
         return self.positions[0]
 
     def update_direction(self):
+        """Применяет отложенное направление к текущему."""
         if self.next_direction:
             self.direction = self.next_direction
             self.next_direction = None
 
     def move(self):
+        """Смещает змейку на одну клетку в текущем направлении."""
         head_x, head_y = self.get_head_position()
         dx, dy = self.direction
         new_head = (
@@ -105,6 +123,7 @@ class Snake(GameObject):
             self.last = None
 
     def draw(self):
+        """Рисует змейку на игровом поле."""
         if self.last:
             self.draw_cell(self.last, BOARD_BACKGROUND_COLOR, border=False)
 
@@ -112,6 +131,7 @@ class Snake(GameObject):
             self.draw_cell(position)
 
     def reset(self):
+        """Возвращает змейку в начальное состояние в центре поля."""
         self.length = 1
         self.last = None
         self.positions = [CENTER_POSITION]
@@ -120,6 +140,7 @@ class Snake(GameObject):
 
 
 def handle_keys(game_object):
+    """Обрабатывает нажатия клавиш и события окна."""
     for event in pg.event.get():
         if event.type == pg.QUIT:
             pg.quit()
@@ -136,6 +157,7 @@ def handle_keys(game_object):
 
 
 def main():
+    """Запускает основной игровой цикл."""
     snake = Snake()
     apple = Apple(occupied_positions=snake.positions)
     fruit = Apple(
