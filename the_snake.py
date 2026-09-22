@@ -11,7 +11,10 @@ GRID_SIZE = 20
 GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
 GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
 
-CENTER_POSITION = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+CENTER_POSITION = (
+    (GRID_WIDTH // 2) * GRID_SIZE,
+    (GRID_HEIGHT // 2) * GRID_SIZE,
+)
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -44,12 +47,21 @@ class GameObject:
         self.body_color = body_color
         self.border_color = border_color
 
-    def draw_cell(self, position, color=None, border=True):
+    def draw_cell(self, position):
         """Отрисовывает одну клетку поля по заданной позиции."""
         rect = pg.Rect(position, (GRID_SIZE, GRID_SIZE))
         pg.draw.rect(screen, self.body_color, rect)
         if self.border_color is not None:
             pg.draw.rect(screen, self.border_color, rect, 1)
+
+    @staticmethod
+    def draw_background_cell(position):
+        """Затирает клетку фоном (без рамки)."""
+        pg.draw.rect(
+            screen,
+            BOARD_BACKGROUND_COLOR,
+            pg.Rect(position, (GRID_SIZE, GRID_SIZE)),
+        )
 
     def draw(self):
         """Отрисовывает объект. Реализуется в дочерних классах."""
@@ -127,7 +139,7 @@ class Snake(GameObject):
     def erase_last(self):
         """Затирает прошлую позицию хвоста."""
         if self.last is not None:
-            self.draw_cell(self.last, BOARD_BACKGROUND_COLOR, border=False)
+            self.draw_background_cell(self.last)
             self.last = None
 
     def draw(self):
@@ -161,6 +173,13 @@ def handle_keys(game_object):
                 game_object.next_direction = RIGHT
 
 
+def restart_round(snake, apple, fruit):
+    """Сброс обьектов и расстановка заново."""
+    snake.reset()
+    apple.randomize_position(snake.positions + [fruit.position])
+    fruit.randomize_position(snake.positions + [apple.position])
+
+
 def main():
     """Запускает основной игровой цикл."""
     snake = Snake()
@@ -178,15 +197,12 @@ def main():
 
         head = snake.get_head_position()
 
-        if head == apple.position:
+        if head in snake.positions[1:] or head == fruit.position:
+            screen.fill(BOARD_BACKGROUND_COLOR)
+            restart_round(snake, apple, fruit)
+        elif head == apple.position:
             snake.length += 1
             apple.randomize_position(snake.positions + [fruit.position])
-
-        elif head == fruit.position or head in snake.positions[1:]:
-            snake.reset()
-            screen.fill(BOARD_BACKGROUND_COLOR)
-            apple.randomize_position(snake.positions)
-            fruit.randomize_position(snake.positions + [apple.position])
 
         snake.erase_last()
         snake.draw()
