@@ -34,21 +34,21 @@ clock = pg.time.Clock()
 class GameObject:
     """Базовый класс для игровых объектов."""
 
-    def __init__(self, body_color=BOARD_BACKGROUND_COLOR):
+    def __init__(
+        self,
+        body_color=BOARD_BACKGROUND_COLOR,
+        border_color=BORDER_COLOR,
+    ):
         """Инициализирует объект: позиция, цвет тела и цвет рамки."""
         self.position = CENTER_POSITION
         self.body_color = body_color
-        self.border_color = BORDER_COLOR
+        self.border_color = border_color
 
     def draw_cell(self, position, color=None, border=True):
         """Отрисовывает одну клетку поля по заданной позиции."""
         rect = pg.Rect(position, (GRID_SIZE, GRID_SIZE))
-        pg.draw.rect(
-            screen,
-            color if color is not None else self.body_color,
-            rect,
-        )
-        if border:
+        pg.draw.rect(screen, self.body_color, rect)
+        if self.border_color is not None:
             pg.draw.rect(screen, self.border_color, rect, 1)
 
     def draw(self):
@@ -64,10 +64,11 @@ class Apple(GameObject):
     def __init__(
         self,
         body_color=APPLE_COLOR,
+        border_color=BORDER_COLOR,
         occupied_positions=(CENTER_POSITION,),
     ):
         """Создаёт яблоко и ставит его в свободную клетку."""
-        super().__init__(body_color)
+        super().__init__(body_color, border_color)
         self.randomize_position(occupied_positions)
 
     def randomize_position(self, occupied_positions):
@@ -88,9 +89,9 @@ class Apple(GameObject):
 class Snake(GameObject):
     """Змейка: движется по полю, растёт от яблок, гибнет от препятствий."""
 
-    def __init__(self, body_color=SNAKE_COLOR):
+    def __init__(self, body_color=SNAKE_COLOR, border_color=BORDER_COLOR):
         """Создаёт змейку длины 1 в центре поля."""
-        super().__init__(body_color)
+        super().__init__(body_color, border_color)
         self.length = 1
         self.positions = [self.position]
         self.direction = RIGHT
@@ -117,16 +118,19 @@ class Snake(GameObject):
         )
         self.positions.insert(0, new_head)
 
-        if len(self.positions) > self.length:
-            self.last = self.positions.pop()
-        else:
+        self.last = (
+            self.positions.pop()
+            if len(self.positions) > self.length
+            else None
+        )
+    def erase_last(self):
+        """Затирает прошлую позицию хвоста."""
+        if self.last is not None:
+            self.draw_cell(self.last, BOARD_BACKGROUND_COLOR, border=False)
             self.last = None
 
     def draw(self):
         """Рисует змейку на игровом поле."""
-        if self.last:
-            self.draw_cell(self.last, BOARD_BACKGROUND_COLOR, border=False)
-
         for position in self.positions:
             self.draw_cell(position)
 
@@ -134,7 +138,7 @@ class Snake(GameObject):
         """Возвращает змейку в начальное состояние в центре поля."""
         self.length = 1
         self.last = None
-        self.positions = [CENTER_POSITION]
+        self.positions = [self.position]
         self.direction = choice([RIGHT, LEFT, UP, DOWN])
         self.next_direction = None
 
@@ -180,10 +184,10 @@ def main():
         elif head == fruit.position or head in snake.positions[1:]:
             snake.reset()
             screen.fill(BOARD_BACKGROUND_COLOR)
-            occupied = snake.positions + [apple.position, fruit.position]
-            apple.randomize_position(occupied)
-            fruit.randomize_position(occupied)
+            apple.randomize_position(snake.positions)
+            fruit.randomize_position(snake.positions + [apple.position])
 
+        snake.erase_last()
         snake.draw()
         apple.draw()
         fruit.draw()
