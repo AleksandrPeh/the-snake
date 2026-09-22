@@ -123,6 +123,7 @@ class Snake(GameObject):
             if len(self.positions) > self.length
             else None
         )
+
     def erase_last(self):
         """Затирает прошлую позицию хвоста."""
         if self.last is not None:
