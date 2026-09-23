@@ -51,17 +51,7 @@ class GameObject:
         """Отрисовывает одну клетку поля по заданной позиции."""
         rect = pg.Rect(position, (GRID_SIZE, GRID_SIZE))
         pg.draw.rect(screen, self.body_color, rect)
-        if self.border_color is not None:
-            pg.draw.rect(screen, self.border_color, rect, 1)
-
-    @staticmethod
-    def draw_background_cell(position):
-        """Затирает клетку фоном (без рамки)."""
-        pg.draw.rect(
-            screen,
-            BOARD_BACKGROUND_COLOR,
-            pg.Rect(position, (GRID_SIZE, GRID_SIZE)),
-        )
+        pg.draw.rect(screen, self.border_color, rect, 1)
 
     def draw(self):
         """Отрисовывает объект. Реализуется в дочерних классах."""
@@ -136,11 +126,19 @@ class Snake(GameObject):
             else None
         )
 
+    @staticmethod
+    def draw_background_cell(position):
+        """Затирает клетку фоном (без рамки)."""
+        pg.draw.rect(
+            screen,
+            BOARD_BACKGROUND_COLOR,
+            pg.Rect(position, (GRID_SIZE, GRID_SIZE)),
+        )
+
     def erase_last(self):
         """Затирает прошлую позицию хвоста."""
         if self.last is not None:
             self.draw_background_cell(self.last)
-            self.last = None
 
     def draw(self):
         """Рисует змейку на игровом поле."""
@@ -150,7 +148,6 @@ class Snake(GameObject):
     def reset(self):
         """Возвращает змейку в начальное состояние в центре поля."""
         self.length = 1
-        self.last = None
         self.positions = [self.position]
         self.direction = choice([RIGHT, LEFT, UP, DOWN])
         self.next_direction = None
@@ -173,13 +170,6 @@ def handle_keys(game_object):
                 game_object.next_direction = RIGHT
 
 
-def restart_round(snake, apple, fruit):
-    """Сброс обьектов и расстановка заново."""
-    snake.reset()
-    apple.randomize_position(snake.positions + [fruit.position])
-    fruit.randomize_position(snake.positions + [apple.position])
-
-
 def main():
     """Запускает основной игровой цикл."""
     snake = Snake()
@@ -198,13 +188,14 @@ def main():
         head = snake.get_head_position()
 
         if head in snake.positions[1:] or head == fruit.position:
-            screen.fill(BOARD_BACKGROUND_COLOR)
-            restart_round(snake, apple, fruit)
+            snake.reset()
+            apple.randomize_position(snake.positions + [fruit.position])
+            fruit.randomize_position(snake.positions + [apple.position])
         elif head == apple.position:
             snake.length += 1
             apple.randomize_position(snake.positions + [fruit.position])
 
-        snake.erase_last()
+        screen.fill(BOARD_BACKGROUND_COLOR)
         snake.draw()
         apple.draw()
         fruit.draw()
