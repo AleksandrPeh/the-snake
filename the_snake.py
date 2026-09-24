@@ -98,7 +98,6 @@ class Snake(GameObject):
         self.positions = [self.position]
         self.direction = RIGHT
         self.next_direction = None
-        self.last = None
 
     def get_head_position(self):
         """Возвращает координаты головы змейки."""
@@ -119,26 +118,8 @@ class Snake(GameObject):
             (head_y + dy * GRID_SIZE) % SCREEN_HEIGHT,
         )
         self.positions.insert(0, new_head)
-
-        self.last = (
+        if len(self.positions) > self.length:
             self.positions.pop()
-            if len(self.positions) > self.length
-            else None
-        )
-
-    @staticmethod
-    def draw_background_cell(position):
-        """Затирает клетку фоном (без рамки)."""
-        pg.draw.rect(
-            screen,
-            BOARD_BACKGROUND_COLOR,
-            pg.Rect(position, (GRID_SIZE, GRID_SIZE)),
-        )
-
-    def erase_last(self):
-        """Затирает прошлую позицию хвоста."""
-        if self.last is not None:
-            self.draw_background_cell(self.last)
 
     def draw(self):
         """Рисует змейку на игровом поле."""
